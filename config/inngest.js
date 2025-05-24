@@ -3,70 +3,66 @@ import connectDB from "./db";
 import User from "@/models/User";
 import Order from "@/models/Order";
 
-// Create a client to send and receive events
 export const inngest = new Inngest({ id: "quickcart-next" });
 
-//Inngest Function to save user data to a database
-
+// 1. Sync user creation
 export const syncUserCreation = inngest.createFunction(
-  {
-    id: "sync-user-from-clerk",
-  },
+  { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
   async ({ event }) => {
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
+
     const userData = {
       _id: id,
       email: email_addresses[0].email_address,
-      name: first_name + " " + last_name,
-
+      name: `${first_name} ${last_name}`,
       imageUrl: image_url,
     };
+
     await connectDB();
     await User.create(userData);
+
+    return { success: true, message: "User created" };
   }
 );
 
-//Inngest Function to update user data in database
-
+// 2. Sync user update
 export const syncUserUpdation = inngest.createFunction(
-  {
-    id: "update-user-from-clerk ",
-  },
-  { event: "clerk/user.update" },
+  { id: "update-user-from-clerk" },
+  { event: "clerk/user.updated" },
   async ({ event }) => {
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
-    const userData = {
-      _id: id,
-      email: email_addresses[0].email_addresses,
-      name: first_name + " " + last_name,
 
+    const userData = {
+      email: email_addresses[0].email_address,
+      name: `${first_name} ${last_name}`,
       imageUrl: image_url,
     };
+
     await connectDB();
-    await User.findIdAndUpdate(id, userData);
+    await User.findByIdAndUpdate(id, userData, { new: true, upsert: true });
+
+    return { success: true, message: "User updated" };
   }
 );
 
-//Inngest Function to delete user from database
-
+// 3. Delete user
 export const syncUserDeletion = inngest.createFunction(
-  {
-    id: "delete-user-with-clerk",
-  },
+  { id: "delete-user-with-clerk" },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
     const { id } = event.data;
 
     await connectDB();
-    await User.findIdAndUpdate(id);
+    await User.findByIdAndDelete(id);
+
+    return { success: true, message: "User deleted" };
   }
 );
 
-//Inngest Function to create user's order in database
-
+// 4. Create orders
 export const createUserOrder = inngest.createFunction(
   {
     id: "create-user-order",
@@ -77,19 +73,17 @@ export const createUserOrder = inngest.createFunction(
   },
   { event: "order/created" },
   async ({ events }) => {
-    const orders = events.map((event) => {
-      return {
-        userId: event.data.userId,
-        items: event.data.items,
-        amount: event.data.amount,
-        address: event.data.address,
-        date: event.data.date,
-      };
-    });
+    const orders = events.map((event) => ({
+      userId: event.data.userId,
+      items: event.data.items,
+      amount: event.data.amount,
+      address: event.data.address,
+      date: event.data.date,
+    }));
 
     await connectDB();
     await Order.insertMany(orders);
 
-    return { sucess: true, processed: orders.length };
+    return { success: true, processed: orders.length };
   }
 );
