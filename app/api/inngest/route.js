@@ -1,3 +1,5 @@
+// app/api/inngest/route.ts (for App Router)
+
 import { serve } from "inngest/next";
 import {
   createUserOrder,
@@ -7,7 +9,7 @@ import {
   syncUserUpdation,
 } from "@/config/inngest";
 
-// Create an API that serves zero functions
+// Serve Inngest functions to handle Clerk and order events
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
