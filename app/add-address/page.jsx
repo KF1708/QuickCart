@@ -22,13 +22,25 @@ const AddAddress = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
+    if (
+      !address.fullName ||
+      !address.phoneNumber ||
+      !address.pincode ||
+      !address.area ||
+      !address.city ||
+      !address.state
+    ) {
+      toast.error("All fields are required");
+      return;
+    }
+
     try {
       const token = await getToken();
 
       const { data } = await axios.post(
         "/api/user/add-address",
         { address },
-        { headers: { Authorization: `Bearer${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (data.success) {
@@ -38,7 +50,11 @@ const AddAddress = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      const message =
+        error?.response?.data?.message ||
+        error.message ||
+        "Something went wrong";
+      toast.error(message);
     }
   };
 
