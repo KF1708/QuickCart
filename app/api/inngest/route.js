@@ -2,11 +2,11 @@
 
 import { serve } from "inngest/next";
 import {
-  createUserOrder,
   inngest,
   syncUserCreation,
-  syncUserDeletion,
   syncUserUpdation,
+  syncUserDeletion,
+  createUserOrder,
 } from "@/config/inngest";
 
 // Serve Inngest functions to handle Clerk and order events
